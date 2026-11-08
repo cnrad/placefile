@@ -8,7 +8,7 @@ export const config = {
   /** Cell pitch in px; squares are `square` px with the remainder as gap. 846 / 9 = 94 columns. */
   cell: 9,
   square: 7,
-  rows: 30,
+  rows: 20,
   footerHeight: 24,
   cornerRadius: 6,
 
@@ -17,9 +17,8 @@ export const config = {
   /** Beyond capacity, each new placement knocks the oldest mark down by 1/fadeSteps. */
   fadeSteps: 10,
 
-  /** Shimmer sweep: one pass takes `sweepSeconds`, then rests until `periodSeconds`. */
-  sweepSeconds: 2.4,
-  periodSeconds: 6,
+  /** Each lit square pulses its glow over `pulseSeconds`; phase is offset by column so it reads as a wave. */
+  pulseSeconds: 3,
 } as const;
 
 export const cols = Math.floor(config.width / config.cell);
@@ -38,5 +37,5 @@ export type RuntimeOptions = {
 
 export const defaultOptions: RuntimeOptions = {
   profileUrl: "https://github.com/cnrad",
-  cooldownMs: 5000,
+  cooldownMs: 1000,
 };

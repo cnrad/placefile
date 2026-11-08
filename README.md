@@ -1,6 +1,6 @@
 # profile-place
 
-A shared pixel canvas that lives inside a GitHub profile README. Visitors click a square and it fills in. The newest 200 marks stay; older marks fade 10% per new placement and disappear on the 210th. A shimmer sweeps the grid every few seconds. Background is transparent so it sits flush on any GitHub theme.
+A shared pixel canvas that lives inside a GitHub profile README. Visitors click a square to toggle it. The newest 200 marks stay; older marks fade 10% per new placement and disappear on the 210th. Each lit square pulses a soft glow, phase-shifted by column so it reads as a slow wave. Background is transparent so it sits flush on any GitHub theme.
 
 ## How it works
 
@@ -9,7 +9,7 @@ GitHub strips scripts, styles, and pointer events from README images, but two th
 - `ismap` on an `<img>` inside an `<a>`. The browser appends the click position to the link as `?x,y`.
 - `Cache-Control: no-cache` on the image response. Camo forwards it, so every profile view re-fetches.
 
-So a click navigates to `/tap?x,y`, the server records the mark and 303-redirects back to the profile, and the freshly fetched SVG shows it. The cooldown is 5 seconds per IP and per cookie; the click is a direct request to this server, so the visitor is not hidden behind camo.
+So a click navigates to `/tap?x,y`, the server records the mark and 303-redirects back to the profile, and the freshly fetched SVG shows it. The cooldown is 1 second per IP and per cookie; the click is a direct request to this server, so the visitor is not hidden behind camo.
 
 ## README snippet
 
@@ -17,12 +17,12 @@ So a click navigates to `/tap?x,y`, the server records the mark and 303-redirect
 <a href="https://YOUR-HOST/tap">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://YOUR-HOST/canvas.svg?theme=dark">
-    <img ismap src="https://YOUR-HOST/canvas.svg?theme=light" width="846" height="294" alt="Shared pixel canvas. Click a square to leave a mark.">
+    <img ismap src="https://YOUR-HOST/canvas.svg?theme=light" width="846" alt="Shared pixel canvas. Click a square to leave a mark.">
   </picture>
 </a>
 ```
 
-Keep `width="846"`. That is the profile README content width on github.com at viewports of 1280px and up. Click coordinates arrive in rendered CSS pixels and the server maps them assuming that width, so on narrower viewports clicks land closer to the top-left than intended. Grid is 94 columns x 30 rows of 9px cells.
+Keep `width="846"` and do not set `height`; the browser derives it from the SVG, so a stale height cannot letterbox the image. That is the profile README content width on github.com at viewports of 1280px and up. Click coordinates arrive in rendered CSS pixels and the server maps them assuming that width, so on narrower viewports clicks land closer to the top-left than intended. Grid is 94 columns x 20 rows of 9px cells.
 
 ## Run locally
 
@@ -64,4 +64,4 @@ State is one JSON file on the volume. Env: `PORT`, `DATA_DIR`, `PROFILE_URL`, `C
 
 ## Tuning
 
-Everything is in `src/config.ts`: width, cell pitch, square size, rows, capacity, fade steps, shimmer timing. Colors and opacities are at the top of `src/render.ts`.
+Everything is in `src/config.ts`: width, cell pitch, square size, rows, capacity, fade steps, pulse timing. Colors and opacities are at the top of `src/render.ts`.

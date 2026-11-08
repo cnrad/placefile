@@ -28,12 +28,15 @@ export class State {
     return { marks: this.marks, total: this.total, lastTap: [...this.lastTap] };
   }
 
-  place(col: number, row: number, at = Date.now()): Mark {
+  /** Toggle a cell. Returns the new mark, or null if the click turned a lit square off. */
+  toggle(col: number, row: number, at = Date.now()): Mark | null {
+    const without = this.marks.filter((m) => !(m.col === col && m.row === row));
+    if (without.length !== this.marks.length) {
+      this.marks = without;
+      return null;
+    }
     const mark: Mark = { col, row, at };
-    this.marks = this.marks
-      .filter((m) => !(m.col === col && m.row === row))
-      .concat(mark)
-      .slice(-maxMarks);
+    this.marks = without.concat(mark).slice(-maxMarks);
     this.total++;
     return mark;
   }

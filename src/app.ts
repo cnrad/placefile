@@ -66,7 +66,7 @@ export async function handle(req: Request, host: Host): Promise<Response> {
       keys.push(`ck:${cookieId}`);
     }
     if (tap && !state.onCooldown(keys, now, host.options.cooldownMs)) {
-      state.place(tap.col, tap.row, now);
+      state.toggle(tap.col, tap.row, now);
       state.recordTap(keys, now);
       await host.persist();
     }

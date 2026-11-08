@@ -6,7 +6,7 @@ import { config, maxMarks } from "./config";
 
 test("rolling capacity with 10-step fade, gone at 210", () => {
   const s = new State();
-  for (let i = 0; i < 300; i++) s.place(i % 94, Math.floor(i / 94), i);
+  for (let i = 0; i < 300; i++) s.toggle(i % 94, Math.floor(i / 94), i);
   expect(s.marks.length).toBe(maxMarks);
   expect(s.total).toBe(300);
   // newest 200 fully opaque
@@ -18,13 +18,13 @@ test("rolling capacity with 10-step fade, gone at 210", () => {
   expect(s.marks[0]!.at).toBe(300 - maxMarks);
 });
 
-test("re-marking a cell moves it to newest", () => {
+test("clicking a lit cell turns it off", () => {
   const s = new State();
-  s.place(5, 5, 1);
-  s.place(6, 6, 2);
-  s.place(5, 5, 3);
-  expect(s.marks.length).toBe(2);
-  expect(s.marks.at(-1)).toMatchObject({ col: 5, row: 5, at: 3 });
+  expect(s.toggle(5, 5, 1)).not.toBeNull();
+  s.toggle(6, 6, 2);
+  expect(s.toggle(5, 5, 3)).toBeNull();
+  expect(s.marks).toEqual([{ col: 6, row: 6, at: 2 }]);
+  expect(s.total).toBe(2);
 });
 
 test("cooldown blocks any shared key within the window", () => {
@@ -38,7 +38,7 @@ test("cooldown blocks any shared key within the window", () => {
 
 test("snapshot round-trips", () => {
   const s = new State();
-  s.place(1, 2, 4);
+  s.toggle(1, 2, 4);
   s.recordTap(["ip:x"], 4);
   const t = new State();
   t.restore(JSON.parse(JSON.stringify(s.snapshot())));
