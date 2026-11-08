@@ -2,7 +2,7 @@
 import { mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { handle, type Host } from "./app";
-import { defaultOptions } from "./config";
+import { defaultCooldownMs } from "./config";
 import { State } from "./state";
 
 const dataDir = process.env.DATA_DIR ?? "./data";
@@ -21,8 +21,8 @@ const server = Bun.serve({
     const host: Host = {
       state,
       options: {
-        profileUrl: process.env.PROFILE_URL ?? defaultOptions.profileUrl,
-        cooldownMs: Number(process.env.COOLDOWN_MS ?? defaultOptions.cooldownMs),
+        profileUrl: process.env.PROFILE_URL ?? "https://github.com",
+        cooldownMs: Number(process.env.COOLDOWN_MS ?? defaultCooldownMs),
       },
       // Only trust a proxy-set header; anything else is client-spoofable.
       clientIp: (r) => r.headers.get(trustedIpHeader) ?? srv.requestIP(r)?.address ?? null,

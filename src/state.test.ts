@@ -62,3 +62,9 @@ test("tap coordinates map through the centered offset", async () => {
   expect(parseTap(new URL(`http://x/tap?0,0`))).toEqual({ col: 0, row: 0 });
   expect(parseTap(new URL(`http://x/tap?10,200`))).toBeNull();
 });
+
+test("github username validation", async () => {
+  const { githubUsername } = await import("./config");
+  for (const ok of ["cnrad", "a", "octo-cat", "A1-b2", "x".repeat(39)]) expect(githubUsername.test(ok)).toBe(true);
+  for (const bad of ["-cnrad", "cnrad-", "octo--cat", "x".repeat(40), "a.b", "a_b", ""]) expect(githubUsername.test(bad)).toBe(false);
+});

@@ -1,7 +1,7 @@
 export const config = {
   /**
    * Rendered width in CSS px. Must equal the README column width on github.com so ismap
-   * click coordinates map to the right cell. Measured: profile README content is 846px
+   * click coordinates map to the right cell. The profile README content column is 846px
    * at viewports >= 1280px.
    */
   width: 846,
@@ -36,7 +36,7 @@ export type RuntimeOptions = {
   cooldownMs: number;
 };
 
-export const defaultOptions: RuntimeOptions = {
-  profileUrl: "https://github.com/cnrad",
-  cooldownMs: 1000,
-};
+export const defaultCooldownMs = 1000;
+
+/** GitHub username rules: 1-39 chars, alphanumeric or single hyphens, no leading/trailing hyphen. */
+export const githubUsername = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i;

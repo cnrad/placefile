@@ -3,14 +3,18 @@ main = "src/worker.ts"
 compatibility_date = "2025-10-01"
 
 [vars]
-PROFILE_URL = "https://github.com/cnrad"
+# Your canvas, served at /canvas.svg and /tap. Clicks redirect here.
+PROFILE_URL = "https://github.com/YOUR_GITHUB_USERNAME"
+# Seconds between accepted clicks from the same visitor, in ms.
 COOLDOWN_MS = "1000"
+# Set to "true" to also serve one canvas per GitHub username at /u/<user>/...
+MULTI_TENANT = "false"
 
 [[durable_objects.bindings]]
 name = "CANVAS"
 class_name = "Canvas"
 
-# SQLite-backed Durable Objects work on the free plan.
+# SQLite-backed Durable Objects are available on the Workers free plan.
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["Canvas"]

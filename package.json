@@ -9,11 +9,18 @@
     "test": "bun test",
     "dev:cf": "wrangler dev",
     "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit -p ."
+    "typecheck": "tsc --noEmit -p .",
+    "deploy:hosted": "wrangler deploy --var PROFILE_URL:https://github.com/cnrad --var MULTI_TENANT:true"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261107.1",
     "@types/bun": "latest",
     "wrangler": "^4.158.0"
+  },
+  "description": "A shared pixel canvas for your GitHub profile README. Visitors click squares; no JavaScript, no iframe.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cnrad/profile-place"
   }
 }

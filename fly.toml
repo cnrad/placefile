@@ -1,5 +1,7 @@
-# Run `fly launch --copy-config --no-deploy` once, then `fly volumes create data --size 1`
-# and `fly deploy`. Set PROFILE_URL if your profile is not github.com/cnrad.
+# Alternative host: Bun on Fly.io with a persistent volume.
+#   fly launch --copy-config --no-deploy
+#   fly volumes create data --size 1
+#   fly deploy
 app = "profile-place"
 primary_region = "iad"
 
@@ -8,7 +10,8 @@ primary_region = "iad"
 [env]
   DATA_DIR = "/data"
   PORT = "3000"
-  PROFILE_URL = "https://github.com/cnrad"
+  PROFILE_URL = "https://github.com/YOUR_GITHUB_USERNAME"
+  COOLDOWN_MS = "1000"
   TRUSTED_IP_HEADER = "fly-client-ip"
 
 [http_service]
