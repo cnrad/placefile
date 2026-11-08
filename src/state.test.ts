@@ -6,7 +6,7 @@ import { config, maxMarks } from "./config";
 
 test("rolling capacity with 10-step fade, gone at 210", () => {
   const s = new State();
-  for (let i = 0; i < 300; i++) s.toggle(i % 94, Math.floor(i / 94), 0, i);
+  for (let i = 0; i < 300; i++) s.toggle(i % 68, Math.floor(i / 68), 0, i);
   expect(s.marks.length).toBe(maxMarks);
   expect(s.total).toBe(300);
   // newest 200 fully opaque
@@ -56,12 +56,13 @@ test("restore drops marks outside the grid", () => {
 
 test("tap coordinates map through the centered offset", async () => {
   const { parseTap } = await import("./app");
-  const { offsetX, cols } = await import("./config");
-  expect(parseTap(new URL(`http://x/tap?${offsetX},0`))).toEqual({ col: 0, row: 0 });
-  expect(parseTap(new URL(`http://x/tap?${offsetX + 12 * 3 + 5},25`))).toEqual({ col: 3, row: 2 });
-  expect(parseTap(new URL(`http://x/tap?845,0`))).toEqual({ col: cols - 1, row: 0 });
+  const { offsetX, offsetY, cols, rows, height } = await import("./config");
+  expect(parseTap(new URL(`http://x/tap?${offsetX},${offsetY}`))).toEqual({ col: 0, row: 0 });
+  expect(parseTap(new URL(`http://x/tap?${offsetX + 12 * 3 + 5},${offsetY + 25}`))).toEqual({ col: 3, row: 2 });
+  expect(parseTap(new URL(`http://x/tap?845,${height - 1}`))).toEqual({ col: cols - 1, row: rows - 1 });
+  // padding snaps to the edge cell
   expect(parseTap(new URL(`http://x/tap?0,0`))).toEqual({ col: 0, row: 0 });
-  expect(parseTap(new URL(`http://x/tap?10,200`))).toBeNull();
+  expect(parseTap(new URL(`http://x/tap?10,${height}`))).toBeNull();
 });
 
 test("github username validation", async () => {

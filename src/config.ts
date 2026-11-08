@@ -5,11 +5,12 @@ export const config = {
    * at viewports >= 1280px.
    */
   width: 846,
-  /** Cell pitch in px; squares are `square` px with the remainder as gap. floor(846 / 12) = 70 columns. */
+  /** Space around the grid so edge glows are not clipped by the image bounds. */
+  padding: 10,
+  /** Cell pitch in px; squares are `square` px with the remainder as gap. floor((846 - 20) / 12) = 68 columns. */
   cell: 12,
   square: 10,
   rows: 10,
-  cornerRadius: 6,
 
   /** This many marks stay fully opaque. */
   capacity: 200,
@@ -20,12 +21,13 @@ export const config = {
   pulseSeconds: 3,
 } as const;
 
-export const cols = Math.floor(config.width / config.cell);
-/** Horizontal slack when `cell` does not divide `width`; the grid is centered. */
-export const offsetX = Math.floor((config.width - cols * config.cell) / 2);
+const innerWidth = config.width - config.padding * 2;
+export const cols = Math.floor(innerWidth / config.cell);
 export const rows = config.rows;
-export const gridHeight = rows * config.cell;
-export const height = gridHeight;
+/** Grid origin. Horizontal slack from `cell` not dividing the inner width is split so the grid is centered. */
+export const offsetX = config.padding + Math.floor((innerWidth - cols * config.cell) / 2);
+export const offsetY = config.padding;
+export const height = rows * config.cell + config.padding * 2;
 /** 200 opaque + 9 fading (90% down to 10%). The next placement removes the oldest. */
 export const maxMarks = config.capacity + config.fadeSteps - 1;
 

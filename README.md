@@ -110,7 +110,7 @@ curl -i "http://localhost:3000/tap?100,50"
 
 ## Tuning
 
-`src/config.ts` holds width, cell pitch, square size, rows, capacity, fade steps, and pulse timing. Colors and opacities are constants at the top of `src/render.ts`. Column count derives from width and cell size.
+`src/config.ts` holds width, padding, cell pitch, square size, rows, capacity, fade steps, and pulse timing. Colors and opacities are constants at the top of `src/render.ts`. Column count derives from width and cell size.
 
 ## Layout
 

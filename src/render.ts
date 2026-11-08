@@ -1,7 +1,7 @@
-import { config, cols, gridHeight, height, offsetX } from "./config";
+import { config, cols, rows, height, offsetX, offsetY } from "./config";
 import type { State } from "./state";
 
-const { width, cell, square, cornerRadius, pulseSeconds } = config;
+const { width, cell, square, pulseSeconds } = config;
 const inset = (cell - square) / 2;
 
 export type ThemeName = "dark" | "light";
@@ -38,7 +38,7 @@ export function renderSvg(state: State, themeName: ThemeName): string {
   state.marks.forEach((m, i) => {
     const fade = state.opacityAt(i);
     const x = offsetX + m.col * cell + inset;
-    const y = m.row * cell + inset;
+    const y = offsetY + m.row * cell + inset;
     const begin = phase(m.col, m.row);
     const op = fade < 1 ? ` opacity="${fade.toFixed(2)}"` : "";
     const fill = ` fill="${colorOf(m.hue)}"`;
@@ -53,16 +53,15 @@ export function renderSvg(state: State, themeName: ThemeName): string {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
 <defs>
-  <pattern id="empty" x="${offsetX}" width="${cell}" height="${cell}" patternUnits="userSpaceOnUse">
+  <pattern id="empty" x="${offsetX}" y="${offsetY}" width="${cell}" height="${cell}" patternUnits="userSpaceOnUse">
     <rect x="${inset}" y="${inset}" width="${square}" height="${square}" rx="1" fill="${fg}"/>
   </pattern>
   <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
     <feGaussianBlur stdDeviation="${GLOW_BLUR}"/>
   </filter>
-  <clipPath id="round"><rect x="0" y="0" width="${width}" height="${gridHeight}" rx="${cornerRadius}"/></clipPath>
 </defs>
-<g clip-path="url(#round)">
-  <rect x="${offsetX}" y="0" width="${cols * cell}" height="${gridHeight}" fill="url(#empty)" opacity="${EMPTY}"/>
+<g>
+  <rect x="${offsetX}" y="${offsetY}" width="${cols * cell}" height="${rows * cell}" fill="url(#empty)" opacity="${EMPTY}"/>
   <g filter="url(#glow)">${glows.join("")}</g>
   <g>${squares.join("")}</g>
 </g>
