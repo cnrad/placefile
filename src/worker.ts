@@ -27,8 +27,9 @@ export class Canvas extends DurableObject<Env> {
         profileUrl: this.env.PROFILE_URL ?? defaultOptions.profileUrl,
         cooldownMs: Number(this.env.COOLDOWN_MS ?? defaultOptions.cooldownMs),
       },
-      // Set by Cloudflare's edge; clients cannot forge it.
-      clientIp: (r) => r.headers.get("cf-connecting-ip"),
+      // The Worker stamps this from cf-connecting-ip before forwarding; the DO is
+      // only reachable through the Worker, so it cannot be forged.
+      clientIp: (r) => r.headers.get("x-client-ip"),
       persist: () => this.ctx.storage.put("state", this.state.snapshot()),
     };
     return handle(req, host);
@@ -37,6 +38,9 @@ export class Canvas extends DurableObject<Env> {
 
 export default {
   fetch(req: Request, env: Env): Promise<Response> {
-    return env.CANVAS.get(env.CANVAS.idFromName("main")).fetch(req);
+    const headers = new Headers(req.headers);
+    headers.set("x-client-ip", req.headers.get("cf-connecting-ip") ?? "unknown");
+    const forwarded = new Request(req, { headers });
+    return env.CANVAS.get(env.CANVAS.idFromName("main")).fetch(forwarded);
   },
 } satisfies ExportedHandler<Env>;
