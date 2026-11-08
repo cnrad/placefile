@@ -24,17 +24,27 @@ So a click navigates to `/tap?x,y`, the server records the mark and 303-redirect
 
 Keep `width="800"`. Click coordinates arrive in rendered CSS pixels, and the server maps them assuming an 800px wide image. On viewports where GitHub shrinks the image, clicks land closer to the top-left than intended.
 
-## Run
+## Run locally
 
 ```sh
 bun install
-bun dev            # http://localhost:3000/canvas.svg?theme=dark
+bun dev            # Bun host, http://localhost:3000/canvas.svg?theme=dark
+bun run dev:cf     # Workers host via wrangler, http://localhost:8787
 bun test
 ```
 
-Env: `PORT`, `DATA_DIR`, `PROFILE_URL`, `COOLDOWN_MS`, `TRUSTED_IP_HEADER`.
+## Deploy (Cloudflare Workers, recommended)
 
-## Deploy (Fly)
+State lives in one Durable Object, which is on the free plan. No volume, no single VM.
+
+```sh
+bunx wrangler login
+bun run deploy
+```
+
+Then point the README at `https://profile-place.<your-subdomain>.workers.dev` or add a custom domain in the Workers dashboard. Edit `PROFILE_URL` and `COOLDOWN_MS` in `wrangler.toml`.
+
+## Deploy (Bun on Fly, alternative)
 
 ```sh
 fly launch --copy-config --no-deploy
@@ -42,7 +52,15 @@ fly volumes create data --size 1 --region iad
 fly deploy
 ```
 
-State is one small JSON file on the volume. Single machine only; the cooldown map and mark list live in memory.
+State is one JSON file on the volume. Env: `PORT`, `DATA_DIR`, `PROFILE_URL`, `COOLDOWN_MS`, `TRUSTED_IP_HEADER`.
+
+## Layout
+
+- `src/app.ts` request handling shared by both hosts
+- `src/worker.ts` Cloudflare Worker + `Canvas` Durable Object
+- `src/server.ts` Bun host with file persistence
+- `src/state.ts` marks, fade math, cooldown
+- `src/render.ts` SVG output
 
 ## Tuning
 

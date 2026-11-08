@@ -5,8 +5,13 @@
     "moduleResolution": "bundler",
     "strict": true,
     "noUncheckedIndexedAccess": true,
-    "types": ["bun-types"],
+    "types": [
+      "bun-types",
+      "@cloudflare/workers-types/experimental"
+    ],
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }

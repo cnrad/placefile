@@ -1,0 +1,19 @@
+name = "profile-place"
+main = "src/worker.ts"
+compatibility_date = "2025-10-01"
+
+[vars]
+PROFILE_URL = "https://github.com/cnrad"
+COOLDOWN_MS = "5000"
+
+[[durable_objects.bindings]]
+name = "CANVAS"
+class_name = "Canvas"
+
+# SQLite-backed Durable Objects work on the free plan.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["Canvas"]
+
+[observability]
+enabled = true

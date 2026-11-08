@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { State } from "./state";
 import { config, maxMarks } from "./config";
 
-process.env.DATA_DIR = "/tmp/pp-test";
+
 
 test("rolling capacity with 10-step fade, gone at 210", () => {
   const s = new State();
@@ -25,4 +25,24 @@ test("re-marking a cell moves it to newest", () => {
   s.place(5, 5, 3, 3);
   expect(s.marks.length).toBe(2);
   expect(s.marks.at(-1)).toMatchObject({ col: 5, row: 5, color: 3 });
+});
+
+test("cooldown blocks any shared key within the window", () => {
+  const s = new State();
+  s.recordTap(["ip:1", "ck:a"], 1000);
+  expect(s.onCooldown(["ip:1"], 3000, 5000)).toBe(true);
+  expect(s.onCooldown(["ck:a", "ip:2"], 3000, 5000)).toBe(true);
+  expect(s.onCooldown(["ip:2"], 3000, 5000)).toBe(false);
+  expect(s.onCooldown(["ip:1"], 6001, 5000)).toBe(false);
+});
+
+test("snapshot round-trips", () => {
+  const s = new State();
+  s.place(1, 2, 3, 4);
+  s.recordTap(["ip:x"], 4);
+  const t = new State();
+  t.restore(JSON.parse(JSON.stringify(s.snapshot())));
+  expect(t.marks).toEqual(s.marks);
+  expect(t.total).toBe(1);
+  expect(t.lastTap.get("ip:x")).toBe(4);
 });
