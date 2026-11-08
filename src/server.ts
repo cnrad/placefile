@@ -1,4 +1,5 @@
-// Bun host: local dev or a plain VPS/Fly. State is one JSON file in DATA_DIR.
+// Plain Bun server for local development. State is one JSON file in DATA_DIR.
+// Not the production host; see worker.ts.
 import { mkdirSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { handle, type Host } from "./app";
@@ -7,7 +8,7 @@ import { State } from "./state";
 
 const dataDir = process.env.DATA_DIR ?? "./data";
 const path = join(dataDir, "state.json");
-const trustedIpHeader = process.env.TRUSTED_IP_HEADER ?? "fly-client-ip";
+const trustedIpHeader = process.env.TRUSTED_IP_HEADER ?? "x-forwarded-for";
 
 const state = new State();
 mkdirSync(dataDir, { recursive: true });

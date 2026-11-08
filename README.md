@@ -80,24 +80,12 @@ Your canvas is at `https://profile-place.<your-subdomain>.workers.dev/canvas.svg
 
 With `MULTI_TENANT = "true"`, your instance also serves one canvas per GitHub username at `/u/<user>/canvas.svg` and `/u/<user>/tap`. Clicks redirect to `github.com/<user>`. Anyone can use any name. There is no ownership check, and visitors can already toggle every square by design, so a canvas created under someone else's name is just an empty canvas nobody embeds.
 
-## Self-host with Bun
-
-`src/server.ts` is a plain Bun server with the same logic and a JSON file for state. `Dockerfile` and `fly.toml` are set up for Fly.io:
-
-```sh
-fly launch --copy-config --no-deploy
-fly volumes create data --size 1
-fly deploy
-```
-
-Env: `PORT`, `DATA_DIR`, `PROFILE_URL`, `COOLDOWN_MS`, `TRUSTED_IP_HEADER` (the header your proxy sets with the real client IP).
-
 ## Develop
 
 ```sh
 bun install
-bun dev            # Bun host at http://localhost:3000/canvas.svg?theme=dark
-bun run dev:cf     # Workers host via wrangler at http://localhost:8787
+bun dev            # plain Bun server, state in ./data, at http://localhost:3000/canvas.svg?theme=dark
+bun run dev:cf     # the real Workers host via wrangler at http://localhost:8787
 bun test
 bun run typecheck
 ```
@@ -114,9 +102,9 @@ curl -i "http://localhost:3000/tap?100,50"
 
 ## Layout
 
-- `src/app.ts` request handling shared by both hosts
+- `src/app.ts` request handling shared by the Worker and the dev server
 - `src/worker.ts` Cloudflare Worker and `Canvas` Durable Object, with per-user routing
-- `src/server.ts` Bun host with file persistence
+- `src/server.ts` plain Bun server for local development, state in a JSON file
 - `src/state.ts` marks, fade math, cooldown
 - `src/render.ts` SVG output
 
