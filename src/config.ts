@@ -1,21 +1,31 @@
 export const config = {
-  /** Rendered image is `width` x `height` CSS px; coordinates from ismap arrive in this space. */
-  width: 800,
-  gridHeight: 400,
+  /**
+   * Rendered width in CSS px. Must equal the README column width on github.com so ismap
+   * click coordinates map to the right cell. Measured: profile README content is 846px
+   * at viewports >= 1280px.
+   */
+  width: 846,
+  /** Cell pitch in px; squares are `square` px with the remainder as gap. 846 / 9 = 94 columns. */
+  cell: 9,
+  square: 7,
+  rows: 30,
   footerHeight: 24,
-  cell: 2,
+  cornerRadius: 6,
 
-  /** Marks newer than this still glow and pulse. */
-  glowMs: 90_000,
   /** This many marks stay fully opaque. */
   capacity: 200,
   /** Beyond capacity, each new placement knocks the oldest mark down by 1/fadeSteps. */
   fadeSteps: 10,
+
+  /** Shimmer sweep: one pass takes `sweepSeconds`, then rests until `periodSeconds`. */
+  sweepSeconds: 2.4,
+  periodSeconds: 6,
 } as const;
 
-export const cols = config.width / config.cell;
-export const rows = config.gridHeight / config.cell;
-export const height = config.gridHeight + config.footerHeight;
+export const cols = Math.floor(config.width / config.cell);
+export const rows = config.rows;
+export const gridHeight = rows * config.cell;
+export const height = gridHeight + config.footerHeight;
 /** 200 opaque + 9 fading (90% down to 10%). The next placement removes the oldest. */
 export const maxMarks = config.capacity + config.fadeSteps - 1;
 

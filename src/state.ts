@@ -1,6 +1,6 @@
-import { config, maxMarks } from "./config";
+import { config, cols, rows, maxMarks } from "./config";
 
-export type Mark = { col: number; row: number; color: number; at: number };
+export type Mark = { col: number; row: number; at: number };
 
 export type Snapshot = { marks: Mark[]; total: number; lastTap: [string, number][] };
 
@@ -15,7 +15,11 @@ export class State {
 
   restore(s: Partial<Snapshot> | null | undefined) {
     if (!s) return;
-    this.marks = (s.marks ?? []).slice(-maxMarks);
+    // Drop anything outside the current grid (e.g. after a resize).
+    this.marks = (s.marks ?? [])
+      .filter((m) => m.col >= 0 && m.col < cols && m.row >= 0 && m.row < rows)
+      .map(({ col, row, at }) => ({ col, row, at }))
+      .slice(-maxMarks);
     this.total = s.total ?? this.marks.length;
     this.lastTap = new Map(s.lastTap ?? []);
   }
@@ -24,8 +28,8 @@ export class State {
     return { marks: this.marks, total: this.total, lastTap: [...this.lastTap] };
   }
 
-  place(col: number, row: number, color: number, at = Date.now()): Mark {
-    const mark: Mark = { col, row, color, at };
+  place(col: number, row: number, at = Date.now()): Mark {
+    const mark: Mark = { col, row, at };
     this.marks = this.marks
       .filter((m) => !(m.col === col && m.row === row))
       .concat(mark)

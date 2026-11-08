@@ -1,8 +1,20 @@
-import { config, height } from "./config";
-import { palette, themes, type Theme } from "./palette";
-import type { Mark, State } from "./state";
+import { config, gridHeight, height } from "./config";
+import type { State } from "./state";
 
-const { width, gridHeight, footerHeight, cell, glowMs } = config;
+const { width, cell, square, footerHeight, cornerRadius, sweepSeconds, periodSeconds } = config;
+const inset = (cell - square) / 2;
+
+export type ThemeName = "dark" | "light";
+
+/** Everything is one foreground color at varying opacity, over a transparent background. */
+const themes: Record<ThemeName, { fg: string }> = {
+  dark: { fg: "#ffffff" },
+  light: { fg: "#1f2328" },
+};
+
+const FILLED = 0.78; // base opacity of a placed square; the shimmer lifts it toward 1
+const EMPTY = 0.05; // empty cells, just enough to show the grid
+const SHIMMER_PEAK = 0.9; // gradient peak; multiplied by the mask (1 on filled, EMPTY on empty)
 
 function fmt(n: number): string {
   return n.toLocaleString("en-US");
@@ -12,67 +24,62 @@ function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
 }
 
-function colorOf(m: Mark): string {
-  return palette[m.color - 1] ?? "#ffffff";
-}
+export function renderSvg(state: State, themeName: ThemeName): string {
+  const { fg } = themes[themeName];
 
-function markRect(m: Mark, opacity: number): string {
-  const o = opacity < 1 ? ` fill-opacity="${opacity.toFixed(2)}"` : "";
-  return `<rect x="${m.col * cell}" y="${m.row * cell}" width="${cell}" height="${cell}" fill="${colorOf(m)}"${o}/>`;
-}
+  const filled = state.marks
+    .map((m, i) => {
+      const o = state.opacityAt(i);
+      const x = m.col * cell + inset;
+      const y = m.row * cell + inset;
+      const op = o < 1 ? ` opacity="${o.toFixed(2)}"` : "";
+      return `<rect x="${x}" y="${y}" width="${square}" height="${square}" rx="1"${op}/>`;
+    })
+    .join("");
 
-function glow(m: Mark, now: number): string {
-  const hex = colorOf(m);
-  const age = Math.min(now - m.at, glowMs) / 1000;
-  const cx = m.col * cell + cell / 2;
-  const cy = m.row * cell + cell / 2;
-  const fade = glowMs / 1000;
-  const phase = (age % 1.6).toFixed(2);
-  // Negative `begin` starts each animation mid-flight at the mark's true age, so
-  // repeated camo fetches of this SVG all agree on where the animation is.
-  return `<g>
-  <animate attributeName="opacity" from="1" to="0" dur="${fade}s" begin="-${age.toFixed(2)}s" fill="freeze"/>
-  <circle cx="${cx}" cy="${cy}" r="${cell * 1.5}" fill="${hex}" opacity="0.45"/>
-  <circle cx="${cx}" cy="${cy}" r="${cell}" fill="none" stroke="${hex}" stroke-width="1">
-    <animate attributeName="r" from="${cell}" to="${cell * 7}" dur="1.6s" begin="-${phase}s" repeatCount="indefinite"/>
-    <animate attributeName="opacity" from="0.9" to="0" dur="1.6s" begin="-${phase}s" repeatCount="indefinite"/>
-  </circle>
-</g>`;
-}
+  const band = width * 0.6;
+  const sweepFrac = (sweepSeconds / periodSeconds).toFixed(4);
 
-export function renderSvg(state: State, themeName: Theme["name"], now = Date.now()): string {
-  const theme = themes[themeName];
-  const rects = state.marks.map((m, i) => markRect(m, state.opacityAt(i))).join("\n  ");
-  const glows = state.marks
-    .filter((m) => now - m.at < glowMs)
-    .map((m) => glow(m, now))
-    .join("\n  ");
-  const label =
-    state.total === 0
-      ? "click any square to leave the first mark"
-      : "click any square to leave your mark";
+  const label = state.total === 0 ? "click a square to leave the first mark" : "click a square to leave your mark";
   const count = state.total === 1 ? "1 mark" : `${fmt(state.total)} marks`;
-  const fontStack = `ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace`;
+  const font = `-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif`;
+  const textY = gridHeight + footerHeight / 2 + 1;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
 <defs>
-  <pattern id="dots" width="${cell * 10}" height="${cell * 10}" patternUnits="userSpaceOnUse">
-    <rect x="0" y="0" width="1" height="1" fill="${theme.dot}"/>
+  <pattern id="empty" width="${cell}" height="${cell}" patternUnits="userSpaceOnUse">
+    <rect x="${inset}" y="${inset}" width="${square}" height="${square}" rx="1" fill="${fg}"/>
   </pattern>
-  <clipPath id="grid"><rect x="0" y="0" width="${width}" height="${gridHeight}"/></clipPath>
+  <pattern id="emptyMask" width="${cell}" height="${cell}" patternUnits="userSpaceOnUse">
+    <rect x="${inset}" y="${inset}" width="${square}" height="${square}" rx="1" fill="#fff"/>
+  </pattern>
+  <linearGradient id="sheen" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${band}" y2="0">
+    <stop offset="0" stop-color="${fg}" stop-opacity="0"/>
+    <stop offset="0.5" stop-color="${fg}" stop-opacity="${SHIMMER_PEAK}"/>
+    <stop offset="1" stop-color="${fg}" stop-opacity="0"/>
+  </linearGradient>
+  <mask id="cells" maskUnits="userSpaceOnUse" x="0" y="0" width="${width}" height="${gridHeight}">
+    <rect x="0" y="0" width="${width}" height="${gridHeight}" fill="url(#emptyMask)" opacity="${EMPTY}"/>
+    <g fill="#fff">${filled}</g>
+  </mask>
+  <clipPath id="round"><rect x="0" y="0" width="${width}" height="${gridHeight}" rx="${cornerRadius}"/></clipPath>
 </defs>
-<rect x="0" y="0" width="${width}" height="${height}" fill="${theme.bg}"/>
-<g clip-path="url(#grid)" shape-rendering="crispEdges">
-  <rect x="0" y="0" width="${width}" height="${gridHeight}" fill="url(#dots)"/>
-  ${rects}
+<g clip-path="url(#round)">
+  <rect x="0" y="0" width="${width}" height="${gridHeight}" fill="url(#empty)" opacity="${EMPTY}"/>
+  <g fill="${fg}" opacity="${FILLED}">${filled}</g>
+  <g mask="url(#cells)">
+    <rect x="0" y="0" width="${band}" height="${gridHeight}" fill="url(#sheen)">
+      <animateTransform attributeName="transform" type="translate"
+        values="${-band} 0; ${width} 0; ${width} 0" keyTimes="0; ${sweepFrac}; 1"
+        calcMode="spline" keySplines="0.4 0 0.6 1; 0 0 1 1"
+        dur="${periodSeconds}s" repeatCount="indefinite"/>
+    </rect>
+  </g>
 </g>
-<g clip-path="url(#grid)">
-  ${glows}
-</g>
-<rect x="0.5" y="0.5" width="${width - 1}" height="${gridHeight}" fill="none" stroke="${theme.border}"/>
-<g font-family='${fontStack}' font-size="11" fill="${theme.text}" dominant-baseline="middle">
-  <text x="1" y="${gridHeight + footerHeight / 2 + 1}">${esc(label)}</text>
-  <text x="${width - 1}" y="${gridHeight + footerHeight / 2 + 1}" text-anchor="end" fill="${theme.textStrong}">${esc(count)}</text>
+<rect x="0.5" y="0.5" width="${width - 1}" height="${gridHeight - 1}" rx="${cornerRadius - 0.5}" fill="none" stroke="${fg}" stroke-opacity="0.12"/>
+<g font-family='${font}' font-size="12" fill="${fg}" dominant-baseline="middle">
+  <text x="0" y="${textY}" fill-opacity="0.5">${esc(label)}</text>
+  <text x="${width}" y="${textY}" text-anchor="end" fill-opacity="0.8">${esc(count)}</text>
 </g>
 </svg>`;
 }

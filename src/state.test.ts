@@ -6,7 +6,7 @@ import { config, maxMarks } from "./config";
 
 test("rolling capacity with 10-step fade, gone at 210", () => {
   const s = new State();
-  for (let i = 0; i < 300; i++) s.place(i % 400, Math.floor(i / 400), 1, i);
+  for (let i = 0; i < 300; i++) s.place(i % 94, Math.floor(i / 94), i);
   expect(s.marks.length).toBe(maxMarks);
   expect(s.total).toBe(300);
   // newest 200 fully opaque
@@ -20,11 +20,11 @@ test("rolling capacity with 10-step fade, gone at 210", () => {
 
 test("re-marking a cell moves it to newest", () => {
   const s = new State();
-  s.place(5, 5, 1, 1);
-  s.place(6, 6, 2, 2);
-  s.place(5, 5, 3, 3);
+  s.place(5, 5, 1);
+  s.place(6, 6, 2);
+  s.place(5, 5, 3);
   expect(s.marks.length).toBe(2);
-  expect(s.marks.at(-1)).toMatchObject({ col: 5, row: 5, color: 3 });
+  expect(s.marks.at(-1)).toMatchObject({ col: 5, row: 5, at: 3 });
 });
 
 test("cooldown blocks any shared key within the window", () => {
@@ -38,11 +38,17 @@ test("cooldown blocks any shared key within the window", () => {
 
 test("snapshot round-trips", () => {
   const s = new State();
-  s.place(1, 2, 3, 4);
+  s.place(1, 2, 4);
   s.recordTap(["ip:x"], 4);
   const t = new State();
   t.restore(JSON.parse(JSON.stringify(s.snapshot())));
   expect(t.marks).toEqual(s.marks);
   expect(t.total).toBe(1);
   expect(t.lastTap.get("ip:x")).toBe(4);
+});
+
+test("restore drops marks outside the grid", () => {
+  const s = new State();
+  s.restore({ marks: [{ col: 300, row: 100, at: 1 }, { col: 3, row: 3, at: 2 }], total: 2, lastTap: [] });
+  expect(s.marks).toEqual([{ col: 3, row: 3, at: 2 }]);
 });
