@@ -1,10 +1,10 @@
 // Cloudflare Workers host. Each canvas is one Durable Object.
 //
 // Routes:
-//   /canvas.svg, /tap          the instance owner's canvas (PROFILE_URL), DO "main"
-//   /u/:user/...               one canvas per GitHub user, redirects to github.com/:user
-//   /r/:owner/:repo/...        one canvas per repository, redirects to github.com/:owner/:repo
-//                              (both only when MULTI_TENANT = "true")
+//   /u/:user/...          one canvas per GitHub user, clicks redirect to github.com/:user
+//   /r/:owner/:repo/...   one canvas per repository, clicks redirect to github.com/:owner/:repo
+//
+// Under each: canvas.svg, tap, health, and (with ADMIN_TOKEN set) export, import.
 import { DurableObject } from "cloudflare:workers";
 import { handle, type Host } from "./app";
 import { defaultCooldownMs, githubRepo, githubUsername } from "./config";
@@ -12,12 +12,12 @@ import { State, type Snapshot } from "./state";
 
 type Env = {
   CANVAS: DurableObjectNamespace<Canvas>;
-  PROFILE_URL?: string;
   COOLDOWN_MS?: string;
-  MULTI_TENANT?: string;
   /** Secret. Enables /export and /import for moving canvases between deployments. */
   ADMIN_TOKEN?: string;
 };
+
+const REPO_URL = "https://github.com/cnrad/placefile";
 
 export class Canvas extends DurableObject<Env> {
   private state = new State();
@@ -34,7 +34,7 @@ export class Canvas extends DurableObject<Env> {
       state: this.state,
       options: {
         // The Worker resolves the redirect target per route and passes it along.
-        profileUrl: req.headers.get("x-profile-url") ?? this.env.PROFILE_URL ?? "https://github.com",
+        profileUrl: req.headers.get("x-profile-url") ?? "https://github.com",
         cooldownMs: Number(this.env.COOLDOWN_MS ?? defaultCooldownMs),
         adminToken: this.env.ADMIN_TOKEN,
       },
@@ -47,32 +47,31 @@ export class Canvas extends DurableObject<Env> {
   }
 }
 
-function resolve(url: URL, env: Env): { id: string; profileUrl: string; path: string } | null {
-  const user = url.pathname.match(/^\/u\/([^/]+)(\/.*)?$/);
-  const repo = url.pathname.match(/^\/r\/([^/]+)\/([^/]+)(\/.*)?$/);
-  if (!user && !repo) {
-    if (!env.PROFILE_URL) return null;
-    return { id: "main", profileUrl: env.PROFILE_URL, path: url.pathname };
-  }
-  if (env.MULTI_TENANT !== "true") return null;
+function resolve(pathname: string): { id: string; profileUrl: string; path: string } | null {
+  const user = pathname.match(/^\/u\/([^/]+)(\/.*)?$/);
   if (user) {
     const name = user[1]!;
     if (!githubUsername.test(name)) return null;
     return { id: `u:${name.toLowerCase()}`, profileUrl: `https://github.com/${name}`, path: user[2] ?? "/" };
   }
-  const [, owner, name, rest] = repo!;
-  if (!githubUsername.test(owner!) || !githubRepo.test(name!)) return null;
-  return {
-    id: `r:${owner!.toLowerCase()}/${name!.toLowerCase()}`,
-    profileUrl: `https://github.com/${owner}/${name}`,
-    path: rest ?? "/",
-  };
+  const repo = pathname.match(/^\/r\/([^/]+)\/([^/]+)(\/.*)?$/);
+  if (repo) {
+    const [, owner, name, rest] = repo;
+    if (!githubUsername.test(owner!) || !githubRepo.test(name!)) return null;
+    return {
+      id: `r:${owner!.toLowerCase()}/${name!.toLowerCase()}`,
+      profileUrl: `https://github.com/${owner}/${name}`,
+      path: rest ?? "/",
+    };
+  }
+  return null;
 }
 
 export default {
   fetch(req: Request, env: Env): Promise<Response> | Response {
     const url = new URL(req.url);
-    const target = resolve(url, env);
+    if (url.pathname === "/") return Response.redirect(REPO_URL, 302);
+    const target = resolve(url.pathname);
     if (!target) return new Response("not found", { status: 404 });
 
     url.pathname = target.path;

@@ -3,12 +3,8 @@ main = "src/worker.ts"
 compatibility_date = "2025-10-01"
 
 [vars]
-# Your canvas, served at /canvas.svg and /tap. Clicks redirect here.
-PROFILE_URL = "https://github.com/YOUR_GITHUB_USERNAME"
-# Seconds between accepted clicks from the same visitor, in ms.
+# Minimum time between accepted clicks from one visitor, in ms.
 COOLDOWN_MS = "1000"
-# Set to "true" to also serve one canvas per GitHub username at /u/<user>/...
-MULTI_TENANT = "false"
 
 [[durable_objects.bindings]]
 name = "CANVAS"

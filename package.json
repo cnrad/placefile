@@ -9,8 +9,7 @@
     "test": "bun test",
     "dev:cf": "wrangler dev",
     "deploy": "wrangler deploy",
-    "typecheck": "tsc --noEmit -p .",
-    "deploy:hosted": "wrangler deploy --var PROFILE_URL:https://github.com/cnrad --var MULTI_TENANT:true"
+    "typecheck": "tsc --noEmit -p ."
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20261107.1",
