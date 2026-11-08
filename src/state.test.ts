@@ -89,3 +89,26 @@ test("marks without a hue survive restore unchanged", () => {
   s.restore({ marks: [{ col: 1, row: 1, at: 1 }], total: 1, lastTap: [] });
   expect(s.marks[0]).toEqual({ col: 1, row: 1, at: 1 });
 });
+
+test("ipv6 collapses to its /64, ipv4 is unchanged", async () => {
+  const { ipKey } = await import("./guard");
+  expect(ipKey("2a01:4f9:c010:e330:aaaa::1")).toBe(ipKey("2a01:4f9:c010:e330:e0c9::1"));
+  expect(ipKey("2a01:4f9:c010:e330::1")).not.toBe(ipKey("2a01:4f9:c010:e331::1"));
+  expect(ipKey("2001:db8::1")).toBe("2001:0db8:0000:0000::/64");
+  expect(ipKey("79.127.217.49")).toBe("79.127.217.49");
+});
+
+test("browser click detection", async () => {
+  const { looksLikeBrowserClick } = await import("./guard");
+  const browser = new Request("http://x/tap?1,1", {
+    headers: {
+      accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      "sec-fetch-mode": "navigate",
+      "sec-fetch-dest": "document",
+      "sec-fetch-user": "?1",
+    },
+  });
+  expect(looksLikeBrowserClick(browser)).toBe(true);
+  expect(looksLikeBrowserClick(new Request("http://x/tap?1,1", { headers: { "user-agent": "curl/8.7.1" } }))).toBe(false);
+  expect(looksLikeBrowserClick(new Request("http://x/tap?1,1", { headers: { "sec-fetch-mode": "navigate", "sec-fetch-dest": "document", accept: "text/html" } }))).toBe(false);
+});

@@ -48,6 +48,8 @@ Then use the snippet above with your own Worker URL. Runs on the Cloudflare free
 
 GitHub strips scripts and styles from README images, but keeps `ismap` on an `<img>` inside a link. Clicking sends the pixel coordinates to the server as `?x,y`. The server toggles that square, redirects back to the page, and the SVG is re-fetched with `no-cache` so the change shows immediately. The glow is SMIL animation, which `<img>` allows.
 
+Taps only count when they look like a real link click (browser `Sec-Fetch` headers present) and don't come from a hosting provider's network. IPv6 visitors are keyed by their /64 block.
+
 Colors come from a hash of the visitor's IP with a random per-canvas salt that never leaves storage. The hash can't be reversed, and the same visitor always gets the same color. IPs are only kept for the 1 second click cooldown.
 
 Each `/u/NAME` and `/r/OWNER/REPO` path is its own canvas with its own Durable Object. Names are case-insensitive.

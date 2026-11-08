@@ -1,4 +1,5 @@
 import { config, cols, rows, offsetX, offsetY, height, type RuntimeOptions } from "./config";
+import { ipKey, looksLikeBrowserClick } from "./guard";
 import { renderSvg } from "./render";
 import type { Snapshot, State } from "./state";
 
@@ -14,6 +15,8 @@ export type Host = {
   options: RuntimeOptions;
   /** Real client IP as determined by the host (proxy header or socket). */
   clientIp(req: Request): string | null;
+  /** True when the host knows the request came from a hosting provider rather than a person. */
+  isHostingNetwork?(req: Request): boolean;
   /** Called after any mutation; hosts persist however they like. */
   persist(): void | Promise<void>;
 };
@@ -21,7 +24,7 @@ export type Host = {
 function clientKeys(req: Request, host: Host): string[] {
   const keys: string[] = [];
   const ip = host.clientIp(req);
-  if (ip) keys.push(`ip:${ip}`);
+  if (ip) keys.push(`ip:${ipKey(ip)}`);
   const cookie = req.headers.get("cookie")?.match(/(?:^|;\s*)pp=([^;]+)/)?.[1];
   if (cookie) keys.push(`ck:${cookie}`);
   return keys;
@@ -73,7 +76,8 @@ export async function handle(req: Request, host: Host): Promise<Response> {
       headers["set-cookie"] = `pp=${cookieId}; Path=/tap; Max-Age=31536000; SameSite=Lax; Secure; HttpOnly`;
       keys.push(`ck:${cookieId}`);
     }
-    if (tap && !state.onCooldown(keys, now, host.options.cooldownMs)) {
+    const allowed = looksLikeBrowserClick(req) && !host.isHostingNetwork?.(req);
+    if (tap && allowed && !state.onCooldown(keys, now, host.options.cooldownMs)) {
       // Color follows the IP so it survives cookie clears and matches across a visitor's devices on one network.
       const identity = keys.find((k) => k.startsWith("ip:")) ?? `ck:${cookieId}`;
       state.toggle(tap.col, tap.row, state.hueFor(identity), now);

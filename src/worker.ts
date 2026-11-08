@@ -9,6 +9,7 @@
 import { DurableObject } from "cloudflare:workers";
 import { handle, type Host } from "./app";
 import { defaultCooldownMs, githubRepo, githubUsername } from "./config";
+import { hostingAsns } from "./guard";
 import { State, type Snapshot } from "./state";
 
 type Env = {
@@ -42,6 +43,7 @@ export class Canvas extends DurableObject<Env> {
       // The Worker stamps this from cf-connecting-ip before forwarding; the DO is
       // only reachable through the Worker, so it cannot be forged.
       clientIp: (r) => r.headers.get("x-client-ip"),
+      isHostingNetwork: (r) => hostingAsns.has(Number(r.headers.get("x-client-asn"))),
       persist: () => this.ctx.storage.put("state", this.state.snapshot()),
     };
     return handle(req, host);
@@ -83,6 +85,7 @@ export default {
     url.pathname = target.path;
     const headers = new Headers(req.headers);
     headers.set("x-client-ip", req.headers.get("cf-connecting-ip") ?? "unknown");
+    headers.set("x-client-asn", String((req.cf as { asn?: number } | undefined)?.asn ?? 0));
     headers.set("x-profile-url", target.profileUrl);
     // `manual` so the stub returns the 303 instead of following it back into the DO.
     const forwarded = new Request(url, { method: req.method, headers, body: req.body, redirect: "manual" });
