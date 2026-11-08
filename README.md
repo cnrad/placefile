@@ -35,7 +35,7 @@ bun test
 
 ## Deploy (Cloudflare Workers, recommended)
 
-State lives in one Durable Object, which is on the free plan. No volume, no single VM.
+State lives in one Durable Object, which is on the free plan. No volume, no single VM. Durable Object storage persists across deploys; it is only lost if you remove the `Canvas` class in a migration.
 
 ```sh
 bunx wrangler login

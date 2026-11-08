@@ -77,7 +77,6 @@ export function renderSvg(state: State, themeName: ThemeName): string {
   <g fill="${fg}" filter="url(#glow)">${glows.join("")}</g>
   <g fill="${fg}">${squares.join("")}</g>
 </g>
-<rect x="0.5" y="0.5" width="${width - 1}" height="${gridHeight - 1}" rx="${cornerRadius - 0.5}" fill="none" stroke="${fg}" stroke-opacity="0.12"/>
 <g font-family='${font}' font-size="12" fill="${fg}" dominant-baseline="middle">
   <text x="0" y="${textY}" fill-opacity="0.5">${esc(label)}</text>
   <text x="${width}" y="${textY}" text-anchor="end" fill-opacity="0.8">${esc(count)}</text>
