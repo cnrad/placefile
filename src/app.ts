@@ -1,6 +1,13 @@
 import { config, cols, rows, offsetX, offsetY, height, type RuntimeOptions } from "./config";
 import { renderSvg } from "./render";
-import type { State } from "./state";
+import type { Snapshot, State } from "./state";
+
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
 
 export type Host = {
   state: State;
@@ -74,6 +81,17 @@ export async function handle(req: Request, host: Host): Promise<Response> {
       await host.persist();
     }
     return redirectHome(host, headers);
+  }
+
+  if (url.pathname === "/export" || url.pathname === "/import") {
+    const token = host.options.adminToken;
+    const given = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    if (!token || !given || !timingSafeEqual(token, given)) return new Response("forbidden", { status: 403 });
+    if (url.pathname === "/export") return Response.json(state.snapshot(), { headers: { "cache-control": "no-store" } });
+    if (req.method !== "POST") return new Response("method not allowed", { status: 405 });
+    state.restore((await req.json()) as Partial<Snapshot>);
+    await host.persist();
+    return Response.json({ ok: true, marks: state.marks.length, total: state.total });
   }
 
   if (url.pathname === "/health") {

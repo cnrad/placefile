@@ -15,6 +15,8 @@ type Env = {
   PROFILE_URL?: string;
   COOLDOWN_MS?: string;
   MULTI_TENANT?: string;
+  /** Secret. Enables /export and /import for moving canvases between deployments. */
+  ADMIN_TOKEN?: string;
 };
 
 export class Canvas extends DurableObject<Env> {
@@ -34,6 +36,7 @@ export class Canvas extends DurableObject<Env> {
         // The Worker resolves the redirect target per route and passes it along.
         profileUrl: req.headers.get("x-profile-url") ?? this.env.PROFILE_URL ?? "https://github.com",
         cooldownMs: Number(this.env.COOLDOWN_MS ?? defaultCooldownMs),
+        adminToken: this.env.ADMIN_TOKEN,
       },
       // The Worker stamps this from cf-connecting-ip before forwarding; the DO is
       // only reachable through the Worker, so it cannot be forged.
@@ -77,7 +80,7 @@ export default {
     headers.set("x-client-ip", req.headers.get("cf-connecting-ip") ?? "unknown");
     headers.set("x-profile-url", target.profileUrl);
     // `manual` so the stub returns the 303 instead of following it back into the DO.
-    const forwarded = new Request(url, { method: req.method, headers, redirect: "manual" });
+    const forwarded = new Request(url, { method: req.method, headers, body: req.body, redirect: "manual" });
     return env.CANVAS.get(env.CANVAS.idFromName(target.id)).fetch(forwarded);
   },
 } satisfies ExportedHandler<Env>;

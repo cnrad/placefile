@@ -36,6 +36,8 @@ export type RuntimeOptions = {
   /** Where /tap sends the visitor after recording a mark. */
   profileUrl: string;
   cooldownMs: number;
+  /** When set, enables GET /export and POST /import with `Authorization: Bearer <token>`. */
+  adminToken?: string;
 };
 
 export const defaultCooldownMs = 1000;

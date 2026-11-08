@@ -39,4 +39,4 @@ const server = Bun.serve({
   },
 });
 
-console.log(`profile-place listening on http://localhost:${server.port}`);
+console.log(`placefile listening on http://localhost:${server.port}`);

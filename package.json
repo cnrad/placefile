@@ -1,5 +1,5 @@
 {
-  "name": "profile-place",
+  "name": "placefile",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -21,6 +21,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cnrad/profile-place"
+    "url": "https://github.com/cnrad/placefile"
   }
 }
