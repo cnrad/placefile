@@ -1,4 +1,4 @@
-import { config, cols, rows, type RuntimeOptions } from "./config";
+import { config, cols, rows, offsetX, type RuntimeOptions } from "./config";
 import { renderSvg } from "./render";
 import type { State } from "./state";
 
@@ -24,9 +24,10 @@ function clientKeys(req: Request, host: Host): string[] {
 export function parseTap(url: URL): { col: number; row: number } | null {
   const m = url.search.match(/^\?(\d+),(\d+)$/);
   if (!m) return null;
-  const col = Math.floor(Number(m[1]) / config.cell);
+  // Clicks in the few px of centering slack on either side snap to the edge column.
+  const col = Math.min(cols - 1, Math.max(0, Math.floor((Number(m[1]) - offsetX) / config.cell)));
   const row = Math.floor(Number(m[2]) / config.cell);
-  if (col < 0 || col >= cols || row < 0 || row >= rows) return null;
+  if (row < 0 || row >= rows) return null;
   return { col, row };
 }
 

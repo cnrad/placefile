@@ -1,4 +1,4 @@
-import { config, cols, gridHeight, height } from "./config";
+import { config, cols, gridHeight, height, offsetX } from "./config";
 import type { State } from "./state";
 
 const { width, cell, square, footerHeight, cornerRadius, pulseSeconds } = config;
@@ -44,7 +44,7 @@ export function renderSvg(state: State, themeName: ThemeName): string {
   const glows: string[] = [];
   state.marks.forEach((m, i) => {
     const fade = state.opacityAt(i);
-    const x = m.col * cell + inset;
+    const x = offsetX + m.col * cell + inset;
     const y = m.row * cell + inset;
     const begin = phase(m.col, m.row);
     const op = fade < 1 ? ` opacity="${fade.toFixed(2)}"` : "";
@@ -64,7 +64,7 @@ export function renderSvg(state: State, themeName: ThemeName): string {
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
 <defs>
-  <pattern id="empty" width="${cell}" height="${cell}" patternUnits="userSpaceOnUse">
+  <pattern id="empty" x="${offsetX}" width="${cell}" height="${cell}" patternUnits="userSpaceOnUse">
     <rect x="${inset}" y="${inset}" width="${square}" height="${square}" rx="1" fill="${fg}"/>
   </pattern>
   <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
@@ -73,7 +73,7 @@ export function renderSvg(state: State, themeName: ThemeName): string {
   <clipPath id="round"><rect x="0" y="0" width="${width}" height="${gridHeight}" rx="${cornerRadius}"/></clipPath>
 </defs>
 <g clip-path="url(#round)">
-  <rect x="0" y="0" width="${width}" height="${gridHeight}" fill="url(#empty)" opacity="${EMPTY}"/>
+  <rect x="${offsetX}" y="0" width="${cols * cell}" height="${gridHeight}" fill="url(#empty)" opacity="${EMPTY}"/>
   <g fill="${fg}" filter="url(#glow)">${glows.join("")}</g>
   <g fill="${fg}">${squares.join("")}</g>
 </g>

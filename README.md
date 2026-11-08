@@ -22,7 +22,7 @@ So a click navigates to `/tap?x,y`, the server records the mark and 303-redirect
 </a>
 ```
 
-Keep `width="846"` and do not set `height`; the browser derives it from the SVG, so a stale height cannot letterbox the image. That is the profile README content width on github.com at viewports of 1280px and up. Click coordinates arrive in rendered CSS pixels and the server maps them assuming that width, so on narrower viewports clicks land closer to the top-left than intended. Grid is 94 columns x 20 rows of 9px cells.
+Keep `width="846"` and do not set `height`; the browser derives it from the SVG, so a stale height cannot letterbox the image. That is the profile README content width on github.com at viewports of 1280px and up. Click coordinates arrive in rendered CSS pixels and the server maps them assuming that width, so on narrower viewports clicks land closer to the top-left than intended. Grid is 70 columns x 10 rows of 12px cells, centered in the 846px width.
 
 ## Run locally
 

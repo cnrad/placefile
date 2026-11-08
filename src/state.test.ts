@@ -52,3 +52,13 @@ test("restore drops marks outside the grid", () => {
   s.restore({ marks: [{ col: 300, row: 100, at: 1 }, { col: 3, row: 3, at: 2 }], total: 2, lastTap: [] });
   expect(s.marks).toEqual([{ col: 3, row: 3, at: 2 }]);
 });
+
+test("tap coordinates map through the centered offset", async () => {
+  const { parseTap } = await import("./app");
+  const { offsetX, cols } = await import("./config");
+  expect(parseTap(new URL(`http://x/tap?${offsetX},0`))).toEqual({ col: 0, row: 0 });
+  expect(parseTap(new URL(`http://x/tap?${offsetX + 12 * 3 + 5},25`))).toEqual({ col: 3, row: 2 });
+  expect(parseTap(new URL(`http://x/tap?845,0`))).toEqual({ col: cols - 1, row: 0 });
+  expect(parseTap(new URL(`http://x/tap?0,0`))).toEqual({ col: 0, row: 0 });
+  expect(parseTap(new URL(`http://x/tap?10,200`))).toBeNull();
+});

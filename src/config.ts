@@ -5,10 +5,10 @@ export const config = {
    * at viewports >= 1280px.
    */
   width: 846,
-  /** Cell pitch in px; squares are `square` px with the remainder as gap. 846 / 9 = 94 columns. */
-  cell: 9,
-  square: 7,
-  rows: 20,
+  /** Cell pitch in px; squares are `square` px with the remainder as gap. floor(846 / 12) = 70 columns. */
+  cell: 12,
+  square: 10,
+  rows: 10,
   footerHeight: 24,
   cornerRadius: 6,
 
@@ -22,6 +22,8 @@ export const config = {
 } as const;
 
 export const cols = Math.floor(config.width / config.cell);
+/** Horizontal slack when `cell` does not divide `width`; the grid is centered. */
+export const offsetX = Math.floor((config.width - cols * config.cell) / 2);
 export const rows = config.rows;
 export const gridHeight = rows * config.cell;
 export const height = gridHeight + config.footerHeight;
