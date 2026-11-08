@@ -2,11 +2,12 @@
 //
 // Routes:
 //   /canvas.svg, /tap          the instance owner's canvas (PROFILE_URL), DO "main"
-//   /u/:user/canvas.svg, /tap  one canvas per GitHub username, redirects to github.com/:user
-//                              (only when MULTI_TENANT = "true")
+//   /u/:user/...               one canvas per GitHub user, redirects to github.com/:user
+//   /r/:owner/:repo/...        one canvas per repository, redirects to github.com/:owner/:repo
+//                              (both only when MULTI_TENANT = "true")
 import { DurableObject } from "cloudflare:workers";
 import { handle, type Host } from "./app";
-import { defaultCooldownMs, githubUsername } from "./config";
+import { defaultCooldownMs, githubRepo, githubUsername } from "./config";
 import { State, type Snapshot } from "./state";
 
 type Env = {
@@ -44,15 +45,25 @@ export class Canvas extends DurableObject<Env> {
 }
 
 function resolve(url: URL, env: Env): { id: string; profileUrl: string; path: string } | null {
-  const m = url.pathname.match(/^\/u\/([^/]+)(\/.*)?$/);
-  if (!m) {
+  const user = url.pathname.match(/^\/u\/([^/]+)(\/.*)?$/);
+  const repo = url.pathname.match(/^\/r\/([^/]+)\/([^/]+)(\/.*)?$/);
+  if (!user && !repo) {
     if (!env.PROFILE_URL) return null;
     return { id: "main", profileUrl: env.PROFILE_URL, path: url.pathname };
   }
   if (env.MULTI_TENANT !== "true") return null;
-  const user = m[1]!;
-  if (!githubUsername.test(user)) return null;
-  return { id: `u:${user.toLowerCase()}`, profileUrl: `https://github.com/${user}`, path: m[2] ?? "/" };
+  if (user) {
+    const name = user[1]!;
+    if (!githubUsername.test(name)) return null;
+    return { id: `u:${name.toLowerCase()}`, profileUrl: `https://github.com/${name}`, path: user[2] ?? "/" };
+  }
+  const [, owner, name, rest] = repo!;
+  if (!githubUsername.test(owner!) || !githubRepo.test(name!)) return null;
+  return {
+    id: `r:${owner!.toLowerCase()}/${name!.toLowerCase()}`,
+    profileUrl: `https://github.com/${owner}/${name}`,
+    path: rest ?? "/",
+  };
 }
 
 export default {

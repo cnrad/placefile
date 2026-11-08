@@ -1,12 +1,19 @@
 # profile-place
 
-A shared pixel canvas that lives in your GitHub profile README. Visitors click a square to light it up or turn it off. Each visitor gets a permanent color, so you can see different people without knowing who they are. The newest 200 squares stay; older ones fade out as new ones arrive. Each lit square pulses a soft glow.
+A shared pixel canvas for your GitHub README. Visitors click a square to light it up. Each visitor gets their own permanent color. No JavaScript, no iframe.
 
-No JavaScript, no iframe, no browser extension. It works inside GitHub's sanitized Markdown.
+Try it. Click a square:
+
+<a href="https://profile-place.cnrad.workers.dev/r/cnrad/profile-place/tap">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://profile-place.cnrad.workers.dev/r/cnrad/profile-place/canvas.svg?theme=dark">
+    <img ismap src="https://profile-place.cnrad.workers.dev/r/cnrad/profile-place/canvas.svg?theme=light" width="846" alt="Shared pixel canvas. Click a square to toggle it.">
+  </picture>
+</a>
 
 ## Add it to your profile
 
-Paste this into your profile README, replacing `YOUR_USERNAME` with your GitHub username:
+Paste this into your profile README. Replace `YOUR_USERNAME` in all three places.
 
 ```html
 <a href="https://profile-place.cnrad.workers.dev/u/YOUR_USERNAME/tap">
@@ -17,97 +24,39 @@ Paste this into your profile README, replacing `YOUR_USERNAME` with your GitHub 
 </a>
 ```
 
-That's it. Clicks redirect to `github.com/YOUR_USERNAME`, so the canvas only makes sense on your own profile.
+For a repository README, use `/r/OWNER/REPO/` instead of `/u/YOUR_USERNAME/`.
 
-Keep `width="846"` and do not set `height`. Click positions arrive as pixels of the rendered image, and 846px is the profile README width on github.com at desktop sizes. If the image is narrower, clicks land left of where they were aimed.
+Keep `width="846"` and don't add a `height`.
 
-The hosted instance is free to use and has no uptime promise. If you want control, self-host below.
-
-## How it works
-
-GitHub renders README images through its camo proxy inside an `<img>`, which strips scripts, styles, and pointer events. Two things survive the sanitizer:
-
-- `ismap` on an `<img>` inside an `<a>`. The browser appends the click position to the link as `?x,y`.
-- `Cache-Control: no-cache` on the image response. Camo forwards it, so every page view re-fetches.
-
-A click goes to `/tap?x,y`. The server toggles that cell, then redirects back to your profile, which re-fetches the SVG and shows the change. The glow is SMIL animation inside the SVG, which `<img>` does allow.
-
-The click is a direct request to the server, so it can rate-limit by IP and cookie. The default cooldown is one second.
-
-Visitor colors come from a hash of the IP address mixed with a random salt that is generated once per canvas and stored alongside it. The salt never leaves storage, so the hash cannot be reversed to an IP, and the same visitor gets the same hue on every visit. Hue is the only thing stored on a square; IPs are kept only for the cooldown window.
-
-## Self-host on Cloudflare Workers
-
-Each canvas is one Durable Object. Storage persists across deploys. The free plan covers a personal profile comfortably.
+## Self-host
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cnrad/profile-place)
 
-Or by hand:
+Or:
 
 ```sh
-git clone https://github.com/cnrad/profile-place
-cd profile-place
+git clone https://github.com/cnrad/profile-place && cd profile-place
 bun install
+# edit PROFILE_URL in wrangler.toml
+bunx wrangler login && bun run deploy
 ```
 
-Edit `wrangler.toml`:
+Then use the snippet above with your Worker URL and no `/u/YOUR_USERNAME` segment. Runs on the Cloudflare free plan.
 
-```toml
-PROFILE_URL = "https://github.com/YOUR_USERNAME"   # where clicks redirect
-COOLDOWN_MS = "1000"
-MULTI_TENANT = "false"                              # "true" to serve /u/<user>/ canvases for anyone
-```
+## How it works
 
-Then:
+GitHub strips scripts and styles from README images, but keeps `ismap` on an `<img>` inside a link. Clicking sends the pixel coordinates to the server as `?x,y`. The server toggles that square, redirects back to your profile, and the SVG is re-fetched with `no-cache` so the change shows immediately. The glow is SMIL animation, which `<img>` allows.
 
-```sh
-bunx wrangler login
-bun run deploy
-```
-
-Your canvas is at `https://profile-place.<your-subdomain>.workers.dev/canvas.svg`. Use the snippet above with your host and without the `/u/YOUR_USERNAME` segment:
-
-```html
-<a href="https://YOUR-HOST/tap">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://YOUR-HOST/canvas.svg?theme=dark">
-    <img ismap src="https://YOUR-HOST/canvas.svg?theme=light" width="846" alt="Shared pixel canvas. Click a square to toggle it.">
-  </picture>
-</a>
-```
-
-### Multi-tenant mode
-
-With `MULTI_TENANT = "true"`, your instance also serves one canvas per GitHub username at `/u/<user>/canvas.svg` and `/u/<user>/tap`. Clicks redirect to `github.com/<user>`. Anyone can use any name. There is no ownership check, and visitors can already toggle every square by design, so a canvas created under someone else's name is just an empty canvas nobody embeds.
+Colors come from a hash of the visitor's IP with a random per-canvas salt that never leaves storage. The hash can't be reversed, and the same visitor always gets the same color. IPs are only kept for the 1 second click cooldown.
 
 ## Develop
 
 ```sh
-bun install
-bun dev            # plain Bun server, state in ./data, at http://localhost:3000/canvas.svg?theme=dark
-bun run dev:cf     # the real Workers host via wrangler at http://localhost:8787
+bun dev           # local Bun server at :3000
+bun run dev:cf    # the Worker via wrangler at :8787
 bun test
-bun run typecheck
 ```
 
-Simulate a click:
-
-```sh
-curl -i "http://localhost:3000/tap?100,50"
-```
-
-## Tuning
-
-`src/config.ts` holds width, padding, cell pitch, square size, rows, capacity, fade steps, and pulse timing. Colors and opacities are constants at the top of `src/render.ts`. Column count derives from width and cell size.
-
-## Layout
-
-- `src/app.ts` request handling shared by the Worker and the dev server
-- `src/worker.ts` Cloudflare Worker and `Canvas` Durable Object, with per-user routing
-- `src/server.ts` plain Bun server for local development, state in a JSON file
-- `src/state.ts` marks, fade math, cooldown
-- `src/render.ts` SVG output
-
-## License
+Grid size, colors, and timing live in `src/config.ts` and the top of `src/render.ts`.
 
 MIT

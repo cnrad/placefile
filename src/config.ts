@@ -42,3 +42,5 @@ export const defaultCooldownMs = 1000;
 
 /** GitHub username rules: 1-39 chars, alphanumeric or single hyphens, no leading/trailing hyphen. */
 export const githubUsername = /^[a-z\d](?:[a-z\d]|-(?=[a-z\d])){0,38}$/i;
+/** GitHub repository name rules: 1-100 chars of letters, digits, `.`, `-`, `_`. */
+export const githubRepo = /^[\w.-]{1,100}$/;
