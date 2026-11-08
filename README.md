@@ -26,6 +26,8 @@ Paste this into your profile README. Replace `YOUR_USERNAME` in all three places
 
 For a repository README, use `/r/OWNER/REPO/` instead of `/u/YOUR_USERNAME/`.
 
+If a bot starts griefing your canvas, add a key segment like `/u/YOUR_USERNAME/any-random-string/`. That is a fresh canvas that still redirects to your profile, and you can rotate it whenever you like.
+
 Keep `width="846"` and don't add a `height`.
 
 ## Self-host

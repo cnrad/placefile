@@ -2,6 +2,7 @@
 //
 // Routes:
 //   /u/:user/...          one canvas per GitHub user, clicks redirect to github.com/:user
+//   /u/:user/:key/...     a separate canvas for the same user; rotate the key to shake off bots
 //   /r/:owner/:repo/...   one canvas per repository, clicks redirect to github.com/:owner/:repo
 //
 // Under each: canvas.svg, tap, health, and (with ADMIN_TOKEN set) export, import.
@@ -48,11 +49,16 @@ export class Canvas extends DurableObject<Env> {
 }
 
 function resolve(pathname: string): { id: string; profileUrl: string; path: string } | null {
-  const user = pathname.match(/^\/u\/([^/]+)(\/.*)?$/);
+  const ROUTE = "(?:canvas\\.svg|tap|health|export|import)";
+  // Plain form first so a key can never shadow a route name.
+  const user =
+    pathname.match(new RegExp(`^/u/([^/]+)()(/${ROUTE})?$`)) ??
+    pathname.match(new RegExp(`^/u/([^/]+)/([A-Za-z0-9_-]{6,64})(/${ROUTE})?$`));
   if (user) {
-    const name = user[1]!;
-    if (!githubUsername.test(name)) return null;
-    return { id: `u:${name.toLowerCase()}`, profileUrl: `https://github.com/${name}`, path: user[2] ?? "/" };
+    const [, name, key, rest] = user;
+    if (!githubUsername.test(name!)) return null;
+    const id = key ? `u:${name!.toLowerCase()}#${key}` : `u:${name!.toLowerCase()}`;
+    return { id, profileUrl: `https://github.com/${name}`, path: rest ?? "/" };
   }
   const repo = pathname.match(/^\/r\/([^/]+)\/([^/]+)(\/.*)?$/);
   if (repo) {
