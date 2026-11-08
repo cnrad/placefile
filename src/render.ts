@@ -1,7 +1,7 @@
 import { config, cols, gridHeight, height, offsetX } from "./config";
 import type { State } from "./state";
 
-const { width, cell, square, footerHeight, cornerRadius, pulseSeconds } = config;
+const { width, cell, square, cornerRadius, pulseSeconds } = config;
 const inset = (cell - square) / 2;
 
 export type ThemeName = "dark" | "light";
@@ -18,14 +18,6 @@ const GLOW_MIN = 0.1; // blurred halo behind each lit square, bottom of pulse
 const GLOW_MAX = 0.55;
 const GLOW_PAD = 3; // halo extends this far past the square before blur
 const GLOW_BLUR = 2.5;
-
-function fmt(n: number): string {
-  return n.toLocaleString("en-US");
-}
-
-function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
-}
 
 /** Pulse phase offset so neighbouring columns are slightly out of step: a soft wave across the grid. */
 function phase(col: number, row: number): string {
@@ -56,11 +48,6 @@ export function renderSvg(state: State, themeName: ThemeName): string {
     );
   });
 
-  const lit = state.marks.length;
-  const label = lit === 0 ? "click a square to light it up" : "click a square to toggle it";
-  const count = lit === 1 ? "1 square lit" : `${fmt(lit)} squares lit`;
-  const font = `-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif`;
-  const textY = gridHeight + footerHeight / 2 + 1;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
 <defs>
@@ -76,10 +63,6 @@ export function renderSvg(state: State, themeName: ThemeName): string {
   <rect x="${offsetX}" y="0" width="${cols * cell}" height="${gridHeight}" fill="url(#empty)" opacity="${EMPTY}"/>
   <g fill="${fg}" filter="url(#glow)">${glows.join("")}</g>
   <g fill="${fg}">${squares.join("")}</g>
-</g>
-<g font-family='${font}' font-size="12" fill="${fg}" dominant-baseline="middle">
-  <text x="0" y="${textY}" fill-opacity="0.5">${esc(label)}</text>
-  <text x="${width}" y="${textY}" text-anchor="end" fill-opacity="0.8">${esc(count)}</text>
 </g>
 </svg>`;
 }

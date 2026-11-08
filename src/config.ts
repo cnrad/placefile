@@ -9,7 +9,6 @@ export const config = {
   cell: 12,
   square: 10,
   rows: 10,
-  footerHeight: 24,
   cornerRadius: 6,
 
   /** This many marks stay fully opaque. */
@@ -26,7 +25,7 @@ export const cols = Math.floor(config.width / config.cell);
 export const offsetX = Math.floor((config.width - cols * config.cell) / 2);
 export const rows = config.rows;
 export const gridHeight = rows * config.cell;
-export const height = gridHeight + config.footerHeight;
+export const height = gridHeight;
 /** 200 opaque + 9 fading (90% down to 10%). The next placement removes the oldest. */
 export const maxMarks = config.capacity + config.fadeSteps - 1;
 
