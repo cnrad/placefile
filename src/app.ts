@@ -67,7 +67,9 @@ export async function handle(req: Request, host: Host): Promise<Response> {
       keys.push(`ck:${cookieId}`);
     }
     if (tap && !state.onCooldown(keys, now, host.options.cooldownMs)) {
-      state.toggle(tap.col, tap.row, now);
+      // Color follows the IP so it survives cookie clears and matches across a visitor's devices on one network.
+      const identity = keys.find((k) => k.startsWith("ip:")) ?? `ck:${cookieId}`;
+      state.toggle(tap.col, tap.row, state.hueFor(identity), now);
       state.recordTap(keys, now);
       await host.persist();
     }

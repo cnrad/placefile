@@ -6,10 +6,10 @@ const inset = (cell - square) / 2;
 
 export type ThemeName = "dark" | "light";
 
-/** Everything is one foreground color at varying opacity, over a transparent background. */
-const themes: Record<ThemeName, { fg: string }> = {
-  dark: { fg: "#ffffff" },
-  light: { fg: "#1f2328" },
+/** Empty cells use `fg`; lit squares take the visitor's hue at fixed saturation/lightness per theme. */
+const themes: Record<ThemeName, { fg: string; sat: number; light: number }> = {
+  dark: { fg: "#ffffff", sat: 75, light: 72 },
+  light: { fg: "#1f2328", sat: 70, light: 46 },
 };
 
 const EMPTY = 0.03; // empty cells, barely there
@@ -30,7 +30,8 @@ function pulse(attr: string, lo: number, hi: number, begin: string): string {
 }
 
 export function renderSvg(state: State, themeName: ThemeName): string {
-  const { fg } = themes[themeName];
+  const { fg, sat, light } = themes[themeName];
+  const colorOf = (hue: number | undefined) => (hue === undefined ? fg : `hsl(${hue} ${sat}% ${light}%)`);
 
   const squares: string[] = [];
   const glows: string[] = [];
@@ -40,11 +41,12 @@ export function renderSvg(state: State, themeName: ThemeName): string {
     const y = m.row * cell + inset;
     const begin = phase(m.col, m.row);
     const op = fade < 1 ? ` opacity="${fade.toFixed(2)}"` : "";
+    const fill = ` fill="${colorOf(m.hue)}"`;
     squares.push(
-      `<rect x="${x}" y="${y}" width="${square}" height="${square}" rx="1"${op}>${pulse("fill-opacity", SQUARE_MIN, 1, begin)}</rect>`,
+      `<rect x="${x}" y="${y}" width="${square}" height="${square}" rx="1"${fill}${op}>${pulse("fill-opacity", SQUARE_MIN, 1, begin)}</rect>`,
     );
     glows.push(
-      `<rect x="${x - GLOW_PAD}" y="${y - GLOW_PAD}" width="${square + GLOW_PAD * 2}" height="${square + GLOW_PAD * 2}" rx="${GLOW_PAD}"${op}>${pulse("fill-opacity", GLOW_MIN, GLOW_MAX, begin)}</rect>`,
+      `<rect x="${x - GLOW_PAD}" y="${y - GLOW_PAD}" width="${square + GLOW_PAD * 2}" height="${square + GLOW_PAD * 2}" rx="${GLOW_PAD}"${fill}${op}>${pulse("fill-opacity", GLOW_MIN, GLOW_MAX, begin)}</rect>`,
     );
   });
 
@@ -61,8 +63,8 @@ export function renderSvg(state: State, themeName: ThemeName): string {
 </defs>
 <g clip-path="url(#round)">
   <rect x="${offsetX}" y="0" width="${cols * cell}" height="${gridHeight}" fill="url(#empty)" opacity="${EMPTY}"/>
-  <g fill="${fg}" filter="url(#glow)">${glows.join("")}</g>
-  <g fill="${fg}">${squares.join("")}</g>
+  <g filter="url(#glow)">${glows.join("")}</g>
+  <g>${squares.join("")}</g>
 </g>
 </svg>`;
 }

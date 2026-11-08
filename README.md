@@ -1,6 +1,6 @@
 # profile-place
 
-A shared pixel canvas that lives in your GitHub profile README. Visitors click a square to light it up or turn it off. The newest 200 squares stay; older ones fade out as new ones arrive. Each lit square pulses a soft glow.
+A shared pixel canvas that lives in your GitHub profile README. Visitors click a square to light it up or turn it off. Each visitor gets a permanent color, so you can see different people without knowing who they are. The newest 200 squares stay; older ones fade out as new ones arrive. Each lit square pulses a soft glow.
 
 No JavaScript, no iframe, no browser extension. It works inside GitHub's sanitized Markdown.
 
@@ -33,6 +33,8 @@ GitHub renders README images through its camo proxy inside an `<img>`, which str
 A click goes to `/tap?x,y`. The server toggles that cell, then redirects back to your profile, which re-fetches the SVG and shows the change. The glow is SMIL animation inside the SVG, which `<img>` does allow.
 
 The click is a direct request to the server, so it can rate-limit by IP and cookie. The default cooldown is one second.
+
+Visitor colors come from a hash of the IP address mixed with a random salt that is generated once per canvas and stored alongside it. The salt never leaves storage, so the hash cannot be reversed to an IP, and the same visitor gets the same hue on every visit. Hue is the only thing stored on a square; IPs are kept only for the cooldown window.
 
 ## Self-host on Cloudflare Workers
 

@@ -6,7 +6,7 @@ import { config, maxMarks } from "./config";
 
 test("rolling capacity with 10-step fade, gone at 210", () => {
   const s = new State();
-  for (let i = 0; i < 300; i++) s.toggle(i % 94, Math.floor(i / 94), i);
+  for (let i = 0; i < 300; i++) s.toggle(i % 94, Math.floor(i / 94), 0, i);
   expect(s.marks.length).toBe(maxMarks);
   expect(s.total).toBe(300);
   // newest 200 fully opaque
@@ -20,10 +20,10 @@ test("rolling capacity with 10-step fade, gone at 210", () => {
 
 test("clicking a lit cell turns it off", () => {
   const s = new State();
-  expect(s.toggle(5, 5, 1)).not.toBeNull();
-  s.toggle(6, 6, 2);
-  expect(s.toggle(5, 5, 3)).toBeNull();
-  expect(s.marks).toEqual([{ col: 6, row: 6, at: 2 }]);
+  expect(s.toggle(5, 5, 0, 1)).not.toBeNull();
+  s.toggle(6, 6, 0, 2);
+  expect(s.toggle(5, 5, 0, 3)).toBeNull();
+  expect(s.marks).toEqual([{ col: 6, row: 6, at: 2, hue: 0 }]);
   expect(s.total).toBe(2);
 });
 
@@ -38,11 +38,12 @@ test("cooldown blocks any shared key within the window", () => {
 
 test("snapshot round-trips", () => {
   const s = new State();
-  s.toggle(1, 2, 4);
+  s.toggle(1, 2, 0, 4);
   s.recordTap(["ip:x"], 4);
   const t = new State();
   t.restore(JSON.parse(JSON.stringify(s.snapshot())));
   expect(t.marks).toEqual(s.marks);
+  expect(t.salt).toBe(s.salt);
   expect(t.total).toBe(1);
   expect(t.lastTap.get("ip:x")).toBe(4);
 });
@@ -67,4 +68,23 @@ test("github username validation", async () => {
   const { githubUsername } = await import("./config");
   for (const ok of ["cnrad", "a", "octo-cat", "A1-b2", "x".repeat(39)]) expect(githubUsername.test(ok)).toBe(true);
   for (const bad of ["-cnrad", "cnrad-", "octo--cat", "x".repeat(40), "a.b", "a_b", ""]) expect(githubUsername.test(bad)).toBe(false);
+});
+
+test("hue is stable per identity, differs across canvases, and is in range", () => {
+  const a = new State();
+  const b = new State();
+  expect(a.hueFor("ip:1.2.3.4")).toBe(a.hueFor("ip:1.2.3.4"));
+  expect(a.hueFor("ip:1.2.3.4")).not.toBe(a.hueFor("ip:1.2.3.5"));
+  expect(a.hueFor("ip:1.2.3.4")).not.toBe(b.hueFor("ip:1.2.3.4"));
+  for (let i = 0; i < 500; i++) {
+    const h = a.hueFor(`ip:10.0.0.${i}`);
+    expect(h).toBeGreaterThanOrEqual(0);
+    expect(h).toBeLessThan(360);
+  }
+});
+
+test("marks without a hue survive restore unchanged", () => {
+  const s = new State();
+  s.restore({ marks: [{ col: 1, row: 1, at: 1 }], total: 1, lastTap: [] });
+  expect(s.marks[0]).toEqual({ col: 1, row: 1, at: 1 });
 });
